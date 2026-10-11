@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String        @id @default(cuid())
+  email        String        @unique
+  password     String
+  name         String?
+  balance      Float         @default(10000)
+  createdAt    DateTime      @default(now())
+  trades       Trade[]
+  holdings     Holding[]
+  alerts       Alert[]
+}
+
+model Holding {
+  id        String   @id @default(cuid())
+  userId    String
+  symbol    String
+  name      String
+  quantity  Float
+  avgPrice  Float
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, symbol])
+}
+
+model Trade {
+  id        String      @id @default(cuid())
+  userId    String
+  symbol    String
+  name      String
+  side      TradeSide
+  quantity  Float
+  price     Float
+  total     Float
+  createdAt DateTime    @default(now())
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Alert {
+  id          String         @id @default(cuid())
+  userId      String
+  symbol      String
+  condition   AlertCondition
+  threshold   Float
+  active      Boolean        @default(true)
+  triggeredAt DateTime?
+  createdAt   DateTime       @default(now())
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SentimentLog {
+  id        String   @id @default(cuid())
+  symbol    String
+  score     Float
+  label     String
+  headline  String
+  source    String
+  createdAt DateTime @default(now())
+}
+
+enum TradeSide {
+  BUY
+  SELL
+}
+
+enum AlertCondition {
+  PRICE_ABOVE
+  PRICE_BELOW
+  CHANGE_PERCENT_UP
+  CHANGE_PERCENT_DOWN
+  SENTIMENT_NEGATIVE
+  SENTIMENT_POSITIVE
+}
